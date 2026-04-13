@@ -346,6 +346,169 @@ p {
   border: 1px solid rgba(195, 198, 209, 0.3);
 }
 
+.login-page {
+  min-height: 100vh;
+  padding: 24px;
+  background:
+    radial-gradient(circle at top left, rgba(0, 51, 102, 0.05), transparent 30%),
+    radial-gradient(circle at bottom right, rgba(0, 218, 243, 0.08), transparent 30%),
+    var(--app-bg);
+}
+
+.login-page-panel {
+  width: min(100%, 560px);
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+.login-page-panel-head {
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.login-page-kicker {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: #cfe6f2;
+  color: #526772;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 0 auto 18px;
+}
+
+.login-page-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.login-page-brand .app-brand-title {
+  font-size: 1.8rem;
+}
+
+.login-page-title-small {
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  color: var(--app-primary);
+  margin-bottom: 12px;
+}
+
+.login-page-panel-head p {
+  color: var(--app-text-soft);
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+
+.login-page-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.login-page-field {
+  display: block;
+  margin-bottom: 18px;
+}
+
+.login-page-input-wrap {
+  position: relative;
+}
+
+.login-page-input-icon {
+  position: absolute;
+  left: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(0, 30, 64, 0.38);
+  font-size: 1.05rem;
+  z-index: 2;
+}
+
+.login-page-input.p-inputtext {
+  width: 100%;
+  border: none;
+  background: var(--app-surface-soft);
+  border-radius: 20px;
+  padding: 20px 20px 20px 52px;
+  font-size: 1rem;
+  color: var(--app-primary);
+  box-shadow: none;
+}
+
+.login-page-input.p-inputtext::placeholder {
+  color: #8392a5;
+}
+
+.login-page-input.p-inputtext:enabled:focus {
+  box-shadow: 0 0 0 4px rgba(0, 218, 243, 0.16);
+}
+
+.login-page-options {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 6px 0 24px;
+  flex-wrap: wrap;
+}
+
+.login-page-remember {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--app-text-soft);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.login-page-remember input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--app-primary);
+}
+
+.login-page-link {
+  border: none;
+  background: transparent;
+  color: var(--app-primary);
+  font-weight: 800;
+  padding: 0;
+  cursor: pointer;
+}
+
+.login-page-submit.p-button {
+  width: 100%;
+  border: none;
+  border-radius: 22px;
+  padding: 20px 24px;
+  background: linear-gradient(135deg, var(--app-primary), var(--app-primary-2));
+  font-size: 1.15rem;
+  font-weight: 800;
+  box-shadow: 0 18px 32px rgba(0, 30, 64, 0.18);
+}
+
+.login-page-submit.p-button:enabled:hover {
+  background: linear-gradient(135deg, var(--app-primary), var(--app-primary-2));
+  filter: brightness(1.03);
+}
+
+.login-page-note {
+  margin-top: 18px;
+  color: var(--app-text-soft);
+  font-size: 0.92rem;
+  line-height: 1.5;
+  text-align: center;
+}
+
 @media (max-width: 992px) {
   .welcome-grid {
     grid-template-columns: 1fr;
@@ -379,23 +542,20 @@ p {
     padding: 14px;
   }
 
-  .glass-topbar {
-    padding: 16px 18px;
-    border-radius: 18px;
+  .login-page {
+    padding: 14px;
   }
 
-  .app-brand-title {
-    font-size: 1.35rem;
-  }
-
-  .lang-pill {
-    display: none;
-  }
-
-  .service-card,
-  .category-card {
+  .login-page-panel {
     padding: 22px;
-    min-height: auto;
+  }
+
+  .login-page-brand {
+    margin-bottom: 22px;
+  }
+
+  .login-page-brand .app-brand-title {
+    font-size: 1.4rem;
   }
 
   .demo-switcher {
