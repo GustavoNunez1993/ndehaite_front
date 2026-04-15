@@ -1,6 +1,8 @@
 import { useState, type FormEvent } from 'react';
 import { Button } from 'primereact/button';
 import { InputText } from 'primereact/inputtext';
+import { signin } from '../services/authService';
+import { saveSession } from '../services/authStorage';
 
 type Props = {
   onNavigate?: (target: string) => void;
@@ -9,10 +11,36 @@ type Props = {
 export default function LoginPage({ onNavigate }: Props) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    onNavigate?.('dashboard');
+    setErrorMessage('');
+
+    if (!username.trim() || !password.trim()) {
+      setErrorMessage('Debe completar usuario y contraseña.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const response = await signin({
+        username,
+        password,
+      });
+
+      saveSession(response.accessToken, response.refreshToken);
+
+      onNavigate?.('dashboard');
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Ocurrió un error al iniciar sesión.';
+      setErrorMessage(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -43,6 +71,7 @@ export default function LoginPage({ onNavigate }: Props) {
                   placeholder="Nombre de usuario"
                   className="login-page-input"
                   autoComplete="username"
+                  disabled={loading}
                 />
               </div>
             </label>
@@ -58,9 +87,16 @@ export default function LoginPage({ onNavigate }: Props) {
                   type="password"
                   className="login-page-input"
                   autoComplete="current-password"
+                  disabled={loading}
                 />
               </div>
             </label>
+
+            {errorMessage && (
+              <small style={{ color: '#dc2626', display: 'block', marginTop: '-0.5rem' }}>
+                {errorMessage}
+              </small>
+            )}
 
             <div className="login-page-options">
               <label className="login-page-remember">
@@ -68,17 +104,23 @@ export default function LoginPage({ onNavigate }: Props) {
                 <span>Recordarme</span>
               </label>
 
-              <button type="button" className="login-page-link" onClick={() => onNavigate?.('queue')}>
+              <button
+                type="button"
+                className="login-page-link"
+                onClick={() => onNavigate?.('queue')}
+                disabled={loading}
+              >
                 Volver
               </button>
             </div>
 
             <Button
-              label="Ingresar"
+              label={loading ? 'Ingresando...' : 'Ingresar'}
               icon="pi pi-sign-in"
               iconPos="right"
               type="submit"
               className="login-page-submit"
+              loading={loading}
             />
           </form>
         </section>
