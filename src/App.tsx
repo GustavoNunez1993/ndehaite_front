@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { SelectButton } from 'primereact/selectbutton';
 
 import WelcomeScreen from './screens/WelcomeScreen';
 import CategoryScreen from './screens/CategoryScreen';
@@ -9,6 +8,8 @@ import TicketConfirmationScreen from './screens/TicketConfirmationScreen';
 import QueueDisplayScreen from './screens/QueueDisplayScreen';
 import StaffDashboardScreen from './screens/StaffDashboardScreen';
 import LoginPage from './screens/LoginPage';
+import { getAccessToken, clearSession } from './services/authStorage';
+import SeccionesScreen from './screens/SeccionesScreen';
 
 export type ScreenOption =
   | 'welcome'
@@ -19,37 +20,37 @@ export type ScreenOption =
   | 'queue'
   | 'dashboard';
 
-function getInitialScreen(): ScreenOption | 'login' {
-  return window.location.pathname === '/login' ? 'login' : 'queue';
+function isLoggedIn(): boolean {
+  return !!getAccessToken();
 }
 
-const options = [
-  { label: 'Bienvenida', value: 'welcome' },
-  { label: 'Sección', value: 'category' },
-  { label: 'Identificación', value: 'identification' },
-  { label: 'Servicios', value: 'services' },
-  { label: 'Confirmación', value: 'ticket' },
-  { label: 'Pantalla', value: 'queue' },
-  { label: 'Operador', value: 'dashboard' },
-];
+function getInitialScreen(): ScreenOption | 'login' {
+  const logged = isLoggedIn();
+  const path = window.location.pathname;
+
+  if (!logged) return 'login';
+  if (path === '/login') return 'dashboard';
+  return 'queue';
+}
 
 export default function App() {
   const [screen, setScreen] = useState<ScreenOption | 'login'>(getInitialScreen);
 
   useEffect(() => {
-    const handlePopState = () => {
-      setScreen(getInitialScreen());
-    };
-
+    const handlePopState = () => setScreen(getInitialScreen());
     window.addEventListener('popstate', handlePopState);
-
-    return () => {
-      window.removeEventListener('popstate', handlePopState);
-    };
+    return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
   const handleNavigate = (target: string) => {
     if (target === 'login') {
+      clearSession();
+      window.history.pushState({}, '', '/login');
+      setScreen('login');
+      return;
+    }
+
+    if (!isLoggedIn()) {
       window.history.pushState({}, '', '/login');
       setScreen('login');
       return;
@@ -64,18 +65,6 @@ export default function App() {
 
   return (
     <>
-      {screen !== 'login' && (
-        <div className="demo-switcher">
-          <SelectButton
-            value={screen}
-            onChange={(e) => setScreen(e.value)}
-            options={options}
-            optionLabel="label"
-            optionValue="value"
-          />
-        </div>
-      )}
-
       {screen === 'login' && <LoginPage onNavigate={handleNavigate} />}
       {screen === 'welcome' && <WelcomeScreen onNavigate={handleNavigate} />}
       {screen === 'category' && <CategoryScreen onNavigate={handleNavigate} />}
@@ -84,6 +73,7 @@ export default function App() {
       {screen === 'ticket' && <TicketConfirmationScreen onNavigate={handleNavigate} />}
       {screen === 'queue' && <QueueDisplayScreen onNavigate={handleNavigate} />}
       {screen === 'dashboard' && <StaffDashboardScreen onNavigate={handleNavigate} />}
+      {screen === 'sections' && <SeccionesScreen onNavigate={handleNavigate} />}
     </>
   );
 }
