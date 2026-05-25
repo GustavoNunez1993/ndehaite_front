@@ -29,7 +29,7 @@ export async function signin(payload: SigninRequest): Promise<SigninResponse> {
   return data as SigninResponse;
 }
 
-export async function refreshToken(refreshTokenValue: string) {
+export async function refreshTokenRequest(refreshTokenValue: string): Promise<SigninResponse> {
   const response = await fetch(`${API_URL}/auth/refresh`, {
     method: 'POST',
     headers: {
@@ -46,5 +46,5 @@ export async function refreshToken(refreshTokenValue: string) {
     throw new Error(data?.message || 'No se pudo refrescar el token');
   }
 
-  return data;
+  return data as SigninResponse;
 }

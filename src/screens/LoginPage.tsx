@@ -33,7 +33,7 @@ export default function LoginPage({ onNavigate }: Props) {
 
       saveSession(response.accessToken, response.refreshToken);
 
-      onNavigate?.('dashboard');
+      onNavigate?.('identification');
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Ocurrió un error al iniciar sesión.';

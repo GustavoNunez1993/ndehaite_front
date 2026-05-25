@@ -9,17 +9,15 @@ import { showError } from '../utils/notify';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-export interface Seccion {
+export interface Servicio {
   id: string;
   codigo: string;
   descripcion: string;
-  tieneServicios?: boolean;
 }
 
-export interface SeccionPayload {
+export interface ServicioPayload {
   codigo: string;
   descripcion: string;
-  tieneServicios: boolean;
 }
 
 function logoutByExpiration() {
@@ -55,7 +53,6 @@ async function authFetch(
     return response;
   }
 
-  // Si el backend devuelve 401 o 403, intentamos refrescar
   if ((response.status === 401 || response.status === 403) && !alreadyRetried) {
     const currentRefreshToken = getRefreshToken();
 
@@ -74,7 +71,6 @@ async function authFetch(
 
       saveSession(newTokens.accessToken, newTokens.refreshToken);
 
-      // Reintento de la petición original una sola vez
       return await authFetch(url, options, true);
     } catch (error) {
       logoutByExpiration();
@@ -86,34 +82,34 @@ async function authFetch(
   throw new Error(data?.message || `Error ${response.status}`);
 }
 
-export async function listarSecciones(): Promise<Seccion[]> {
-  const res = await authFetch(`${API_URL}/secciones`);
+export async function listarServicios(): Promise<Servicio[]> {
+  const res = await authFetch(`${API_URL}/servicios`);
   return res.json();
 }
 
-export async function obtenerSeccion(id: string): Promise<Seccion> {
-  const res = await authFetch(`${API_URL}/secciones/${id}`);
+export async function obtenerServicio(id: string): Promise<Servicio> {
+  const res = await authFetch(`${API_URL}/servicios/${id}`);
   return res.json();
 }
 
-export async function crearSeccion(payload: SeccionPayload): Promise<Seccion> {
-  const res = await authFetch(`${API_URL}/secciones`, {
+export async function crearServicio(payload: ServicioPayload): Promise<Servicio> {
+  const res = await authFetch(`${API_URL}/servicios`, {
     method: 'POST',
     body: JSON.stringify(payload),
   });
   return res.json();
 }
 
-export async function actualizarSeccion(id: string, payload: SeccionPayload): Promise<Seccion> {
-  const res = await authFetch(`${API_URL}/secciones/${id}`, {
+export async function actualizarServicio(id: string, payload: ServicioPayload): Promise<Servicio> {
+  const res = await authFetch(`${API_URL}/servicios/${id}`, {
     method: 'PUT',
     body: JSON.stringify(payload),
   });
   return res.json();
 }
 
-export async function eliminarSeccion(id: string): Promise<void> {
-  await authFetch(`${API_URL}/secciones/${id}`, {
+export async function eliminarServicio(id: string): Promise<void> {
+  await authFetch(`${API_URL}/servicios/${id}`, {
     method: 'DELETE',
   });
 }

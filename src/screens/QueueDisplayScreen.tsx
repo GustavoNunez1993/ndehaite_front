@@ -1,17 +1,16 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from 'primereact/button';
 import ScreenContainer from '../components/layout/ScreenContainer';
+import { listarTurnos, type Turno } from '../services/turnosService';
 
 type Props = {
   onNavigate?: (target: string) => void;
 };
 
-const nextTurns = [
-  { code: 'A-112', service: 'Caja Principal' },
-  { code: 'B-046', service: 'Firma F2' },
-  { code: 'C-021', service: 'Atención General' },
-  { code: 'D-008', service: 'Entregas' },
-];
+type TurnoSocketMessage = {
+  type: string;
+  turno: Turno;
+};
 
 function speakableTurn(code: string) {
   return code.split('').map((char) => (char === '-' ? ' ' : char)).join(' ');
@@ -21,15 +20,51 @@ function speakableModule(code: string) {
   return code.split('').join(' ');
 }
 
+function getApiBaseUrl() {
+  return (import.meta.env.VITE_API_URL || 'http://localhost:8084/api').replace(/\/$/, '');
+}
+
+function getTurnosSocketUrl() {
+  const apiUrl = getApiBaseUrl();
+  const httpUrl = new URL(apiUrl);
+
+  httpUrl.protocol = httpUrl.protocol === 'https:' ? 'wss:' : 'ws:';
+  httpUrl.pathname = '/ws/turnos';
+  httpUrl.search = '';
+
+  return httpUrl.toString();
+}
+
+function sortBySequence(turnos: Turno[]) {
+  return [...turnos].sort((a, b) => (a.numeroSecuencia || 0) - (b.numeroSecuencia || 0));
+}
+
 export default function QueueDisplayScreen({ onNavigate }: Props) {
-  const currentTurn = 'B-045';
-  const currentModule = '04';
-  const currentService = 'Firma F1';
+  const [turnos, setTurnos] = useState<Turno[]>([]);
+  const [audioEnabled, setAudioEnabled] = useState(false);
+  const [socketStatus, setSocketStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
+  const lastSpokenTurnId = useRef<string | null>(null);
+  const currentTurn = useMemo(() => {
+    return [...turnos]
+      .filter((turno) => turno.estadoTurno === 'LLAMADO')
+      .sort((a, b) => {
+        const aDate = a.fechaHoraLlamado ? new Date(a.fechaHoraLlamado).getTime() : 0;
+        const bDate = b.fechaHoraLlamado ? new Date(b.fechaHoraLlamado).getTime() : 0;
+
+        return bDate - aDate;
+      })[0] || null;
+  }, [turnos]);
+  const nextTurns = useMemo(() => {
+    return sortBySequence(turnos.filter((turno) => turno.estadoTurno === 'EN_ESPERA')).slice(0, 4);
+  }, [turnos]);
+  const currentTurnNumber = currentTurn?.numeroTurno || '-';
+  const currentModule = currentTurn?.moduloActual || '00';
+  const currentService = currentTurn?.seccionDescripcion || '-';
 
   const callTurnByVoice = useCallback(() => {
-    if (!('speechSynthesis' in window)) return;
+    if (!currentTurn || !('speechSynthesis' in window)) return;
 
-    const text = `Turno ${speakableTurn(currentTurn)}, pasar al módulo ${speakableModule(
+    const text = `Turno ${speakableTurn(currentTurn.numeroTurno)}, pasar al módulo ${speakableModule(
       currentModule
     )}. Servicio ${currentService}.`;
 
@@ -50,12 +85,87 @@ export default function QueueDisplayScreen({ onNavigate }: Props) {
     }
 
     window.speechSynthesis.speak(utterance);
-  }, [currentTurn, currentModule, currentService]);
+  }, [currentModule, currentService, currentTurn]);
+
+  const handleAudioButton = () => {
+    setAudioEnabled(true);
+    callTurnByVoice();
+  };
+
+  const upsertTurno = useCallback((turno: Turno) => {
+    setTurnos((current) => {
+      const exists = current.some((item) => item.id === turno.id);
+
+      if (!exists) {
+        return [...current, turno];
+      }
+
+      return current.map((item) => (item.id === turno.id ? turno : item));
+    });
+  }, []);
 
   useEffect(() => {
-    if (!('speechSynthesis' in window)) return;
+    listarTurnos()
+      .then(setTurnos)
+      .catch(() => {
+        setTurnos([]);
+      });
+  }, []);
+
+  useEffect(() => {
+    let reconnectTimeout: number | undefined;
+    let closedByEffect = false;
+    let socket: WebSocket | null = null;
+
+    const connect = () => {
+      setSocketStatus('connecting');
+      socket = new WebSocket(getTurnosSocketUrl());
+
+      socket.onopen = () => {
+        setSocketStatus('connected');
+      };
+
+      socket.onmessage = (event) => {
+        const message = JSON.parse(event.data) as TurnoSocketMessage;
+
+        if (message.turno) {
+          upsertTurno(message.turno);
+        }
+      };
+
+      socket.onclose = () => {
+        setSocketStatus('disconnected');
+
+        if (!closedByEffect) {
+          reconnectTimeout = window.setTimeout(connect, 3000);
+        }
+      };
+
+      socket.onerror = () => {
+        socket?.close();
+      };
+    };
+
+    connect();
+
+    return () => {
+      closedByEffect = true;
+
+      if (reconnectTimeout) {
+        window.clearTimeout(reconnectTimeout);
+      }
+
+      socket?.close();
+    };
+  }, [upsertTurno]);
+
+  useEffect(() => {
+    if (!audioEnabled || !currentTurn || lastSpokenTurnId.current === currentTurn.id || !('speechSynthesis' in window)) {
+      return undefined;
+    }
 
     const run = () => {
+      lastSpokenTurnId.current = currentTurn.id;
       callTurnByVoice();
     };
 
@@ -71,7 +181,7 @@ export default function QueueDisplayScreen({ onNavigate }: Props) {
       window.speechSynthesis.cancel();
       window.speechSynthesis.onvoiceschanged = null;
     };
-  }, [callTurnByVoice]);
+  }, [audioEnabled, callTurnByVoice, currentTurn]);
 
   return (
     <ScreenContainer activeLabel="Información" onNavigate={onNavigate}>
@@ -85,7 +195,7 @@ export default function QueueDisplayScreen({ onNavigate }: Props) {
           <div className="queue-main-content">
             <div>
               <p className="queue-label">Turno</p>
-              <div className="queue-turn">{currentTurn}</div>
+              <div className="queue-turn">{currentTurnNumber}</div>
               <div className="queue-service">Servicio: {currentService}</div>
             </div>
 
@@ -112,14 +222,19 @@ export default function QueueDisplayScreen({ onNavigate }: Props) {
 
             <div className="queue-footer-actions">
               <Button
-                label="Llamar turno"
+                label={audioEnabled ? 'Repetir llamado' : 'Activar audio'}
                 icon="pi pi-volume-up"
                 type="button"
                 className="queue-call-button"
-                onClick={callTurnByVoice}
+                disabled={!currentTurn}
+                onClick={handleAudioButton}
               />
 
-              <div className="queue-footer-note">Por favor diríjase al módulo indicado</div>
+              <div className="queue-footer-note">
+                {socketStatus === 'connected'
+                  ? 'Pantalla conectada en tiempo real'
+                  : 'Reconectando pantalla en tiempo real'}
+              </div>
             </div>
           </div>
         </div>
@@ -129,10 +244,10 @@ export default function QueueDisplayScreen({ onNavigate }: Props) {
 
           <div className="queue-next-list">
             {nextTurns.map((item) => (
-              <div key={item.code} className="queue-next-item">
+              <div key={item.id} className="queue-next-item">
                 <div>
-                  <div className="queue-next-code">{item.code}</div>
-                  <div className="queue-next-service">{item.service}</div>
+                  <div className="queue-next-code">{item.numeroTurno}</div>
+                  <div className="queue-next-service">{item.seccionDescripcion}</div>
                 </div>
 
                 <div className="queue-next-icon">

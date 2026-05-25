@@ -4,51 +4,50 @@ import { Column } from 'primereact/column';
 import { Button } from 'primereact/button';
 import { Dialog } from 'primereact/dialog';
 import { InputText } from 'primereact/inputtext';
-import { Checkbox } from 'primereact/checkbox';
 import { Toast } from 'primereact/toast';
 import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import {
-  listarSecciones,
-  crearSeccion,
-  actualizarSeccion,
-  eliminarSeccion,
-  type Seccion,
-  type SeccionPayload,
-} from '../services/seccionesService';
+  listarServicios,
+  crearServicio,
+  actualizarServicio,
+  eliminarServicio,
+  type Servicio,
+  type ServicioPayload,
+} from '../services/serviciosService';
 import AppTopbar from '../components/layout/AppTopbar';
 
 type Props = {
   onNavigate?: (target: string) => void;
 };
 
-const emptyForm: SeccionPayload = { codigo: '', descripcion: '', tieneServicios: false };
+const emptyForm: ServicioPayload = { codigo: '', descripcion: '' };
 
 function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
-export default function SeccionesScreen({ onNavigate }: Props) {
+export default function ServiciosScreen({ onNavigate }: Props) {
   const toast = useRef<Toast>(null);
-  const [secciones, setSecciones] = useState<Seccion[]>([]);
+  const [servicios, setServicios] = useState<Servicio[]>([]);
   const [loading, setLoading] = useState(false);
   const [dialogVisible, setDialogVisible] = useState(false);
-  const [editTarget, setEditTarget] = useState<Seccion | null>(null);
-  const [form, setForm] = useState<SeccionPayload>(emptyForm);
+  const [editTarget, setEditTarget] = useState<Servicio | null>(null);
+  const [form, setForm] = useState<ServicioPayload>(emptyForm);
   const [saving, setSaving] = useState(false);
 
-  const fetchSecciones = async () => {
+  const fetchServicios = async () => {
     setLoading(true);
     try {
-      const data = await listarSecciones();
-      setSecciones(data);
+      const data = await listarServicios();
+      setServicios(data);
     } catch (e: unknown) {
-      toast.current?.show({ severity: 'error', summary: 'Error', detail: getErrorMessage(e, 'No se pudieron cargar las secciones') });
+      toast.current?.show({ severity: 'error', summary: 'Error', detail: getErrorMessage(e, 'No se pudieron cargar los servicios') });
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { fetchSecciones(); }, []);
+  useEffect(() => { fetchServicios(); }, []);
 
   const openNew = () => {
     setEditTarget(null);
@@ -56,13 +55,9 @@ export default function SeccionesScreen({ onNavigate }: Props) {
     setDialogVisible(true);
   };
 
-  const openEdit = (seccion: Seccion) => {
-    setEditTarget(seccion);
-    setForm({
-      codigo: seccion.codigo,
-      descripcion: seccion.descripcion,
-      tieneServicios: Boolean(seccion.tieneServicios),
-    });
+  const openEdit = (servicio: Servicio) => {
+    setEditTarget(servicio);
+    setForm({ codigo: servicio.codigo, descripcion: servicio.descripcion });
     setDialogVisible(true);
   };
 
@@ -80,27 +75,27 @@ export default function SeccionesScreen({ onNavigate }: Props) {
     setSaving(true);
     try {
       if (editTarget) {
-        await actualizarSeccion(editTarget.id, form);
+        await actualizarServicio(editTarget.id, form);
       } else {
-        await crearSeccion(form);
+        await crearServicio(form);
       }
       toast.current?.show({
         severity: 'success',
         summary: 'Éxito',
-        detail: editTarget ? 'Sección actualizada' : 'Sección creada',
+        detail: editTarget ? 'Servicio actualizado' : 'Servicio creado',
       });
       closeDialog();
-      fetchSecciones();
+      fetchServicios();
     } catch (e: unknown) {
-      toast.current?.show({ severity: 'error', summary: 'Error', detail: getErrorMessage(e, 'No se pudo guardar la sección') });
+      toast.current?.show({ severity: 'error', summary: 'Error', detail: getErrorMessage(e, 'No se pudo guardar el servicio') });
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDelete = (seccion: Seccion) => {
+  const handleDelete = (servicio: Servicio) => {
     confirmDialog({
-      message: `¿Eliminar la sección "${seccion.descripcion}"?`,
+      message: `¿Eliminar el servicio "${servicio.descripcion}"?`,
       header: 'Confirmar eliminación',
       icon: 'pi pi-trash',
       acceptClassName: 'p-button-danger',
@@ -108,39 +103,21 @@ export default function SeccionesScreen({ onNavigate }: Props) {
       rejectLabel: 'Cancelar',
       accept: async () => {
         try {
-          await eliminarSeccion(seccion.id);
-          toast.current?.show({ severity: 'success', summary: 'Eliminado', detail: 'Sección eliminada' });
-          fetchSecciones();
+          await eliminarServicio(servicio.id);
+          toast.current?.show({ severity: 'success', summary: 'Eliminado', detail: 'Servicio eliminado' });
+          fetchServicios();
         } catch (e: unknown) {
-          toast.current?.show({ severity: 'error', summary: 'Error', detail: getErrorMessage(e, 'No se pudo eliminar la sección') });
+          toast.current?.show({ severity: 'error', summary: 'Error', detail: getErrorMessage(e, 'No se pudo eliminar el servicio') });
         }
       },
     });
   };
 
-  const actionsTemplate = (row: Seccion) => (
+  const actionsTemplate = (row: Servicio) => (
     <div style={{ display: 'flex', gap: 8 }}>
       <Button icon="pi pi-pencil" rounded text severity="secondary" onClick={() => openEdit(row)} />
       <Button icon="pi pi-trash" rounded text severity="danger" onClick={() => handleDelete(row)} />
     </div>
-  );
-
-  const serviciosTemplate = (row: Seccion) => (
-    <span
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minWidth: 46,
-        padding: '6px 12px',
-        borderRadius: 999,
-        background: row.tieneServicios ? '#dcfce7' : '#ffedd5',
-        color: row.tieneServicios ? '#166534' : '#9a3412',
-        fontWeight: 700,
-      }}
-    >
-      {row.tieneServicios ? 'Sí' : 'No'}
-    </span>
   );
 
   const dialogFooter = (
@@ -164,11 +141,11 @@ export default function SeccionesScreen({ onNavigate }: Props) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 28 }}>
           <div>
             <div className="step-pill">Configuración</div>
-            <h2 className="section-title">Secciones</h2>
-            <p className="section-subtitle">Administrá las secciones disponibles del sistema.</p>
+            <h2 className="section-title">Servicios</h2>
+            <p className="section-subtitle">Administrá los servicios disponibles del sistema.</p>
           </div>
           <Button
-            label="Nueva sección"
+            label="Nuevo servicio"
             icon="pi pi-plus"
             onClick={openNew}
             style={{
@@ -183,17 +160,16 @@ export default function SeccionesScreen({ onNavigate }: Props) {
 
         <div className="screen-card" style={{ padding: 0, overflow: 'hidden' }}>
           <DataTable
-            value={secciones}
+            value={servicios}
             loading={loading}
             paginator
             rows={10}
             rowsPerPageOptions={[5, 10, 25]}
-            emptyMessage="No hay secciones registradas"
+            emptyMessage="No hay servicios registrados"
             style={{ borderRadius: 24 }}
           >
             <Column field="codigo" header="Código" sortable style={{ width: 140 }} />
             <Column field="descripcion" header="Descripción" sortable />
-            <Column header="Tiene servicios" body={serviciosTemplate} sortable style={{ width: 170 }} />
             <Column body={actionsTemplate} style={{ width: 100, textAlign: 'right' }} />
           </DataTable>
         </div>
@@ -202,7 +178,7 @@ export default function SeccionesScreen({ onNavigate }: Props) {
       <Dialog
         visible={dialogVisible}
         onHide={closeDialog}
-        header={editTarget ? 'Editar sección' : 'Nueva sección'}
+        header={editTarget ? 'Editar servicio' : 'Nuevo servicio'}
         footer={dialogFooter}
         style={{ width: 480 }}
         modal
@@ -226,24 +202,11 @@ export default function SeccionesScreen({ onNavigate }: Props) {
             <InputText
               value={form.descripcion}
               onChange={(e) => setForm((f) => ({ ...f, descripcion: e.target.value }))}
-              placeholder="Nombre de la sección"
+              placeholder="Nombre del servicio"
               maxLength={150}
               style={{ width: '100%' }}
             />
           </div>
-          <label
-            htmlFor="tieneServicios"
-            style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}
-          >
-            <Checkbox
-              inputId="tieneServicios"
-              checked={form.tieneServicios}
-              onChange={(e) => setForm((f) => ({ ...f, tieneServicios: Boolean(e.checked) }))}
-            />
-            <span className="field-label" style={{ margin: 0 }}>
-              ¿Tiene servicios?
-            </span>
-          </label>
         </div>
       </Dialog>
     </div>

@@ -977,7 +977,7 @@ p {
 .staff-actions-grid {
   margin-top: 26px;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 12px;
 }
 
@@ -1597,7 +1597,7 @@ p {
   border: 1px solid rgba(195, 198, 209, 0.35);
   border-radius: 16px;
   box-shadow: var(--app-shadow-strong);
-  z-index: 1000;
+  z-index: 99999; /* asegurar que quede sobre overlays */
   overflow: hidden;
 }
 

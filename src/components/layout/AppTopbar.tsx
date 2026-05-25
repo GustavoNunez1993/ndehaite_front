@@ -9,8 +9,14 @@ type AppTopbarProps = {
 const configOptions = [
   { label: 'Perfil', value: 'profile', icon: 'pi pi-user' },
   { label: 'Preferencias', value: 'preferences', icon: 'pi pi-sliders-h' },
-  {label: 'Secciones', value: 'sections', icon: 'pi pi-list' },
+  { label: 'Secciones', value: 'sections', icon: 'pi pi-list' },
+  { label: 'Servicios', value: 'admin-services', icon: 'pi pi-briefcase' },
   { label: 'Cerrar sesión', value: 'login', icon: 'pi pi-sign-out' },
+];
+
+const turnOptions = [
+  { label: 'Llamador funcionario', value: 'dashboard', icon: 'pi pi-megaphone' },
+  { label: 'Listado de turnos', value: 'admin-turns', icon: 'pi pi-ticket' },
 ];
 
 export default function AppTopbar({
@@ -18,13 +24,19 @@ export default function AppTopbar({
   showLanguage = true,
   onNavigate,
 }: AppTopbarProps) {
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [configDropdownOpen, setConfigDropdownOpen] = useState(false);
+  const [turnDropdownOpen, setTurnDropdownOpen] = useState(false);
+  const configDropdownRef = useRef<HTMLDivElement>(null);
+  const turnDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setDropdownOpen(false);
+      if (configDropdownRef.current && !configDropdownRef.current.contains(e.target as Node)) {
+        setConfigDropdownOpen(false);
+      }
+
+      if (turnDropdownRef.current && !turnDropdownRef.current.contains(e.target as Node)) {
+        setTurnDropdownOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -47,7 +59,7 @@ export default function AppTopbar({
           <button
             type="button"
             className={activeLabel === 'Home' ? 'app-nav-item active' : 'app-nav-item'}
-            onClick={() => onNavigate?.('welcome')}
+            onClick={() => onNavigate?.('identification')}
           >
             Home
           </button>
@@ -68,18 +80,54 @@ export default function AppTopbar({
             Información
           </button>
 
-          {/* Dropdown Configuraciones */}
-          <div className="app-nav-dropdown" ref={dropdownRef}>
+          <div className="app-nav-dropdown" ref={turnDropdownRef}>
             <button
               type="button"
-              className={dropdownOpen ? 'app-nav-item active' : 'app-nav-item'}
-              onClick={() => setDropdownOpen((prev) => !prev)}
+              className={turnDropdownOpen ? 'app-nav-item active' : 'app-nav-item'}
+              onClick={() => {
+                setTurnDropdownOpen((prev) => !prev);
+                setConfigDropdownOpen(false);
+              }}
             >
-              Configuraciones
-              <i className={`pi ${dropdownOpen ? 'pi-chevron-up' : 'pi-chevron-down'} app-nav-chevron`} />
+              Administración de turnos
+              <i className={`pi ${turnDropdownOpen ? 'pi-chevron-up' : 'pi-chevron-down'} app-nav-chevron`} />
             </button>
 
-            {dropdownOpen && (
+            {turnDropdownOpen && (
+              <div className="app-nav-dropdown-menu">
+                {turnOptions.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    className="app-nav-dropdown-item"
+                    onClick={() => {
+                      setTurnDropdownOpen(false);
+                      onNavigate?.(opt.value);
+                    }}
+                  >
+                    <i className={`${opt.icon} app-nav-dropdown-icon`} />
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Dropdown Configuraciones */}
+          <div className="app-nav-dropdown" ref={configDropdownRef}>
+            <button
+              type="button"
+              className={configDropdownOpen ? 'app-nav-item active' : 'app-nav-item'}
+              onClick={() => {
+                setConfigDropdownOpen((prev) => !prev);
+                setTurnDropdownOpen(false);
+              }}
+            >
+              Configuraciones
+              <i className={`pi ${configDropdownOpen ? 'pi-chevron-up' : 'pi-chevron-down'} app-nav-chevron`} />
+            </button>
+
+            {configDropdownOpen && (
               <div className="app-nav-dropdown-menu">
                 {configOptions.map((opt) => (
                   <button
@@ -87,7 +135,7 @@ export default function AppTopbar({
                     type="button"
                     className="app-nav-dropdown-item"
                     onClick={() => {
-                      setDropdownOpen(false);
+                      setConfigDropdownOpen(false);
                       onNavigate?.(opt.value);
                     }}
                   >

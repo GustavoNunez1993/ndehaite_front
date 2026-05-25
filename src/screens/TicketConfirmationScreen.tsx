@@ -1,12 +1,14 @@
 import { Button } from 'primereact/button';
 import { Card } from 'primereact/card';
 import ScreenContainer from '../components/layout/ScreenContainer';
+import type { Turno } from '../services/turnosService';
 
 type Props = {
   onNavigate?: (target: string) => void;
+  ticket?: Turno | null;
 };
 
-export default function TicketConfirmationScreen({ onNavigate }: Props) {
+export default function TicketConfirmationScreen({ onNavigate, ticket }: Props) {
   return (
     <ScreenContainer activeLabel="Servicios" onNavigate={onNavigate}>
       <section className="ticket-confirmation-layout">
@@ -25,7 +27,7 @@ export default function TicketConfirmationScreen({ onNavigate }: Props) {
 
           <div className="ticket-turn-block">
             <p className="ticket-turn-label">Su Turno</p>
-            <div className="ticket-turn-number">A-124</div>
+            <div className="ticket-turn-number">{ticket?.numeroTurno || '-'}</div>
           </div>
         </div>
 
@@ -55,7 +57,7 @@ export default function TicketConfirmationScreen({ onNavigate }: Props) {
               icon="pi pi-check"
               className="ticket-action-secondary"
               type="button"
-              onClick={() => onNavigate?.('queue')}
+              onClick={() => onNavigate?.('identification')}
             />
           </div>
         </div>
